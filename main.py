@@ -11,12 +11,14 @@ app = Flask(__name__)
 
 host = 'localhost'
 port = 27017
-database = 'mydatabase'
+database = 'flask_db'
+collection = "activity"
 # Connect to MongoDB
-connection_string = f"mongodb://{host}:{port}/{database}"
+connection_string = f"mongodb://{host}:{port}"
+# connection_string = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.9.1"
 client = MongoClient(connection_string)
-db = client['mydatabase']
-collection = db['mycollection']
+db = client[database]
+collection = db[collection]
 
 
 def diff_prettyHtml(diffs):
@@ -44,30 +46,45 @@ Returns:
             html.append("<span>%s</span>" % text)
     return "".join(html)
 
-def generate(username):
+def generate(projectID):
     actions = []
     diffs_htmls = []
-    project_ids = []
+    users = []
     overall_htmls = []
-    data = collection.find({'username': username})
-    for j in range(collection.count_documents({'username': username})):
+    data = collection.find({'project': projectID})
+    # print(collection.find({'project': projectID}))
+    for j in range(collection.count_documents({'project': projectID})):
         try:
-            index = project_ids.index(data[j]['project'])
-            actions[index].append(data[j])
-        except ValueError:
-            project_ids.append(data[j]['project'])
-            actions.append([data[j]])
-
-    for i in range(len(actions)):
-        diffs_htmls = []
-        for k in range(len(actions[i]) - 1):
-            if actions[i][k]['text'] != actions[i][k + 1]['text']:
-                diffs = dmp.diff_main(actions[i][k]['text'], actions[i][k + 1]['text'])
+            actions.append({"file": data[j]["file"], "text": data[j]['text'], "timestamp": data[j]["timestamp"]})
+            users.append(data[j]['username'])
+            # actions[index].append(data[j])
+        except:
+            users.append(data[j]['username'])
+            actions.append({"file": data[j]["file"], 'suggestion': data[j]['suggestion'], "timestamp": data[j]["timestamp"]})
+    # print(actions[0]['text'])
+    diffs_htmls = []
+    for i in range(len(actions)-1):
+        try:
+            if actions[i]['text'] != actions[i+1]['text']:
+                diffs = dmp.diff_main(actions[i]['text'], actions[i+1]['text'])
                 dmp.diff_cleanupSemantic(diffs)
                 diffs_htmls.append(diff_prettyHtml(diffs))
-        overall_htmls.append(diffs_htmls)
-
-    return project_ids, overall_htmls
+        except:
+            diffs_htmls.append("lol")
+            print([key for key in actions[i+1]])
+    # overall_htmls.append(diffs_htmls)
+    
+    info = []
+    print(len(users))
+    print(len(actions))
+    print(len(diffs_htmls))
+    for i in range(0, len(users)):
+        if i == 0:
+            info.append({"users": users[i], "actions": actions[i], "htmls": actions[0]['text']})
+        if i > 0:
+            info.append({"users": users[i], "actions": actions[i], "htmls": diffs_htmls[i-1]})
+        
+    return info
 
 class LocalStore:
     def __call__(self, f: callable):
@@ -82,10 +99,14 @@ def create():
         if request.method == 'POST':
             info = request.get_json(force=True)
             print("THIS IS THE REQUEST", info)
-            Username = info["Username"]
-            project_ids, overall_htmls = generate(Username)
-            print(project_ids, overall_htmls)
-            return {"status": "ok", "projectIDs": project_ids, "diff_htmls": overall_htmls}
+            projectID = info["projectID"]
+            
+            # project_ids, actions, overall_htmls = generate(projectID)
+            info = generate(projectID)
+            # print(info)
+            # print(project_ids, actions, overall_htmls)
+            return {"status": "ok", "info": info}
+            # return {"status": "ok", "projectIDs": project_ids, "diff_htmls": overall_htmls}
     except:
         print(traceback.print_exc())
     return {"status": "no", "projectIDs": "", "diff_htmls": ""}
