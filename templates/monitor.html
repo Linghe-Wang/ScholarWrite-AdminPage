@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Timeline</title>
+  <link rel="stylesheet" href="../static/css/monitor.css">
+</head>
+<body>
+  <div class="timeline-container">
+    <ol class="timeline-slider">
+      <li class="timeline-slide slide-is-active">
+        <ol class="timeline" id="timeline-events">
+          <!-- Events will be dynamically added here -->
+        </ol>
+      </li>
+    </ol>
+    <span class="timeline-pager timeline-pager__previous"></span>
+    <span class="timeline-pager timeline-pager__next"></span>
+  </div>
+  <div class="document-viewer">
+    <button type="button" onclick="retrieveProject()">Generate!</button>
+    <input type="text" id="projectID" name="projectID" placeholder="Enter projectID">
+    <!-- <input type="text" id="textInput" value="0"> -->
+    <br>
+    <div class="buttons"></div>
+    <div id="displayContent" class="displayContent" style="white-space: pre-line; width: 750px; border: 1px solid black;">
+        "The beginning of edits"
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="../static/js/monitor.js"></script>
+  <br>
+  <br>
+</body>
+</html>
